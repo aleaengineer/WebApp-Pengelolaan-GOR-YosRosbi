@@ -1,59 +1,235 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# GOR Yos Rosbi - Web App Pengelolaan
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Pengelolaan booking lapangan GOR Yos Rosbi dengan sistem member, kupon, dan PWA.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Daftar Isi
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [Fitur](#fitur)
+- [Tech Stack](#tech-stack)
+- [Instalasi](#instalasi)
+- [Struktur Workflow](#struktur-workflow)
+- [Peran Pengguna](#peran-pengguna)
+- [Database](#database)
+- [Kontributor](#kontributor)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Fitur
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Customer
+- Landing page dengan info GOR, harga, timeline, promo
+- Jadwal ketersediaan lapangan realtime
+- Booking per jam / harian dengan cek ketersediaan & jeda 30 menit otomatis
+- 3 metode pembayaran: transfer (unggah bukti), Midtrans (simulasi), cash
+- Kuota member gratis (jika paket aktif)
+- Kupon percent (hanya per jam, max 1x/user)
+- Dashboard: statistik booking, paket member, riwayat, promo
+- PWA installable
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Admin / Operator
+- Kelola booking (lihat detail, update status)
+- Kelola blokir jadwal manual
+- Kelola paket member (harga, kuota, durasi)
+- Kelola kupon (buat, edit, aktif/nonaktifkan)
+- Laporan booking per tanggal & jenis kegiatan
+- Pengaturan umum (jam operasional, buffer, harga sewa, rekening, kontak)
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Tech Stack
 
-### Premium Partners
+| Layer | Teknologi |
+|-------|-----------|
+| Framework | Laravel 12.69 |
+| Auth | Laravel Breeze (Blade) |
+| Frontend | Blade + Tailwind CSS 3 |
+| Fonts | Poppins, Inter |
+| PWA | vite-plugin-pwa (Cache-First/Network-First) |
+| Database | MySQL/MariaDB (produksi) / SQLite (dev) |
+| PHP | 8.2 |
+| Node | 25+ |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## Instalasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Persyaratan
+- PHP 8.2+ dengan extension: openssl, pdo, mbstring, tokenizer, xml, ctype, json, bcmath, fileinfo
+- Composer 2+
+- Node 18+ & npm 10+
+- MySQL 5.7+ / MariaDB 10.4+ **atau** SQLite
 
-## Code of Conduct
+### Setup Lokal
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# 1. Clone repo
+git clone https://github.com/aleaengineer/WebApp-Pengelolaan-GOR-YosRosbi.git
+cd WebApp-Pengelolaan-GOR-YosRosbi
 
-## Security Vulnerabilities
+# 2. Install PHP dependencies
+composer install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 3. Install npm dependencies & build assets
+npm install && npm run build
 
-## License
+# 4. Copy env
+cp .env.example .env
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 5. Configure database di .env
+DB_CONNECTION=mysql
+DB_DATABASE=goryosrosbi
+DB_USERNAME=root
+DB_PASSWORD=
+
+# 6. Generate app key
+php artisan key:generate
+
+# 7. Jalankan migrasi + seeder
+php artisan migrate:fresh --seed
+
+# 8. Jalankan server
+php artisan serve
+```
+
+Buka: `http://127.0.0.1:8000`
+
+### Setup MySQL (opsional, jika tidak pakai SQLite)
+
+```sql
+CREATE DATABASE goryosrosbi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+---
+
+## Struktur Workflow
+
+### 1. Landing Page (`/`)
+- Hero dengan nama GOR, deskripsi, CTA "Booking Sekarang"
+- Strip info: jam operasional, alamat, kontak
+- Harga per jam & harian
+- Timeline pengalaman GOR
+- Promo aktif (banner merah)
+- Tombol PWA install
+
+### 2. Cek Ketersediaan (`/jadwal`)
+- Slot tetap: 08:00 - 00:00 (90 menit siklus = 60 menit sewa + 30 menit jeda)
+- Cek realtime berdasarkan booking aktif + blokir jadwal + buffer pembersihan
+- Jika ada bentrok → saran slot tersedia berikutnya
+
+### 3. Booking (`/booking/create`)
+**Form:**
+- Tanggal, jam mulai, jam selesai, jenis kegiatan (badminton/volley/basket/event)
+- Tipe sewa: per jam / harian
+- Metode: transfer / midtrans / cash
+- Kode kupon (opsional)
+
+**Proses submit:**
+```
+[1] Validasi input
+[2] Cek ketersediaan (buffer jeda 30 menit antar booking)
+[3] Hitung harga dasar (HargaSewa per_jam/harian)
+[4] Cek kuota member → jika cukup, total = Rp0
+[5] Validasi kupon (percent, per_jam, tidak stack dengan gratis member, 1x/user)
+[6] Hitung diskon kupon
+[7] Simpan booking + payment dalam DB transaction
+[8] Redirect ke halaman detail booking
+```
+
+### 4. Detail Booking (`/booking/{id}`)
+- Info lengkap: tanggal, jam, jenis, tipe, metode
+- Status: pending_verifikasi / paid / confirmed / completed / cancelled
+- Jika transfer → upload bukti pembayaran
+- Tombol cancel (kembalikan kuota kupon jika ada)
+
+### 5. Dashboard Customer (`/dashboard`)
+- Greeting + status member
+- Statistik: total booking, jam terpakai, total bayar, total diskon
+- Jadwal terdekat (countdown)
+- Quick actions: booking baru, riwayat, jadwal
+- Promo aktif
+- Riwayat booking terbaru
+
+### 6. Admin Panel (`/admin/*`)
+- `/admin/bookings` → Lihat semua booking, detail per booking
+- `/admin/blokir` → Tambah/hapus blokir jadwal manual
+- `/admin/coupons` → CRUD kupon (code, percent, max discount, quota, per_user_limit, min_amount, aktif/nonaktif)
+- `/admin/laporan` → Filter booking per tanggal & jenis, jumlah total
+- `/admin/settings` → Pengaturan umum + harga paket member
+
+---
+
+## Peran Pengguna
+
+| Peran | Akses |
+|-------|-------|
+| **Customer** | Booking, dashboard, riwayat, dashboard customer |
+| **Admin** | Semua fitur admin + dashboard admin |
+| **Operator** | Akses admin (booking, blokir, settings) |
+
+---
+
+## Database
+
+### Tabel Utama
+
+| Tabel | Deskripsi |
+|-------|-----------|
+| `users` | Pengguna (role: customer/admin/operator, member_package_id, member_expired_at) |
+| `lapangans` | Data lapangan |
+| `paket_members` | Paket member (nama, kuota_jam, durasi_hari, harga) |
+| `harga_sewas` | Harga sewa per lapangan (tipe: per_jam/harian, harga, harga_member) |
+| `bookings` | Booking (tanggal, jam, jenis, tipe_sewa, total_harga, discount, status) |
+| `payments` | Pembayaran (metode, amount, status, bukti_transfer) |
+| `blokir_jadwals` | Blokir jadwal manual |
+| `settings` | Pengaturan umum (key-value) |
+| `coupons` | Kupon (code, percent, max_discount, quota, per_user_limit, min_amount) |
+| `coupon_usages` | Riwayat penggunaan kupon per user |
+
+### Relasi Workflow di Database
+
+```
+User ──(1:N)── Booking ──(1:1)── Payment
+User ──(1:N)── Booking ──(N:1)── Coupon ──(1:N)── CouponUsage
+User ──(N:1)── PaketMember (via member_package_id)
+Lapangan ──(1:N)── Booking
+Lapangan ──(1:N)── HargaSewa
+Lapangan ──(1:N)── BlokirJadwal
+Booking ──(N:1)── PaketMember (via paket_member_id, jika pakai kuota gratis)
+```
+
+---
+
+## Akun Default (Hasil Seed)
+
+| Email | Password | Peran |
+|-------|----------|-------|
+| `admin@goryosrosbi.test` | `password` | Admin |
+| `operator@goryosrosbi.test` | `password` | Operator |
+| `customer@test.com` | `password` | Customer (Paket Hemat 10x aktif) |
+
+---
+
+## Kupon Demo
+
+| Kode | Diskon | Max | Min Belanja | Quota |
+|------|--------|-----|-------------|-------|
+| `YOS10` | 10% | Rp15.000 | - | 100 |
+| `HEMAT20` | 20% | Rp20.000 | Rp50.000 | 50 |
+
+---
+
+## PWA
+
+Aplikasi support install sebagai PWA:
+- Manifest: `public/manifest.json` (theme color `#DC2626`)
+- Service Worker: `public/sw.js` (Cache-First untuk assets, Network-First untuk API)
+- Halaman offline: `public/offline.html`
+- Ikon: `public/icons/` (72x72 sampai 512x512)
+
+---
+
+## Kreditor
+
+Project ini dikembangkan oleh **Farhan Ale** dengan kontribusi tim GOR Yos Rosbi.
