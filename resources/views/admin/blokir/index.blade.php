@@ -2,6 +2,10 @@
     <x-slot name="header"><h2 class="font-bold text-xl" style="font-family:Poppins"><span class="text-white">Blokir</span> <span class="text-primary-100">Jadwal</span></h2></x-slot>
     <div class="py-6 bg-gray-50 min-h-screen">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <button onclick="if(history.length>1){history.back()}else{window.location.href='{{ route('admin.bookings.index') }}'}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 px-4 py-2.5 rounded-full shadow-sm hover:bg-gray-50 hover:text-primary-600 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                Kembali
+            </button>
             <div class="card mb-6">
                 <h3 class="font-bold mb-3">Tambah Blokir (Maintenance)</h3>
                 <form method="POST" action="{{ route('admin.blokir.store') }}" class="grid sm:grid-cols-2 gap-3">

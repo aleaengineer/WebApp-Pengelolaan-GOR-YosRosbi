@@ -61,44 +61,32 @@ class HomeController extends Controller
             'jam_selesai' => 'required',
             'tipe_sewa' => 'nullable|in:per_jam,harian'
         ]);
-        $lapanganId = \App\Models\Lapangan::first()->id ?? 1;
-        $result = $service->checkAvailability($lapanganId, $request->tanggal, $request->jam_mulai, $request->jam_selesai, $request->tipe_sewa ?? 'per_jam');
+        $lapangan = Lapangan::first();
+        if (!$lapangan) {
+            return response()->json(['available' => false, 'reason' => 'Lapangan belum dikonfigurasi', 'suggestion' => null], 404);
+        }
+        $result = $service->checkAvailability($lapangan->id, $request->tanggal, $request->jam_mulai, $request->jam_selesai, $request->tipe_sewa ?? 'per_jam');
         return response()->json($result);
     }
 
-    public function checkCoupon(Request $request)
+    public function checkCoupon(Request $request, BookingService $service)
     {
         $request->validate(['code' => 'required|string', 'total_harga' => 'nullable|integer', 'tipe_sewa' => 'nullable|in:per_jam,harian']);
-        $code = strtoupper(trim($request->code));
-        $coupon = \App\Models\Coupon::where('code', $code)->first();
-        if (!$coupon) return response()->json(['valid'=>false,'message'=>'Kode kupon tidak ditemukan']);
-        if (!$coupon->is_active) return response()->json(['valid'=>false,'message'=>'Kupon tidak aktif']);
-        if ($coupon->isExpired()) return response()->json(['valid'=>false,'message'=>'Kupon sudah expired']);
-        if ($coupon->quota !== null && $coupon->used_count >= $coupon->quota) return response()->json(['valid'=>false,'message'=>'Kuota kupon habis']);
-        if ($request->tipe_sewa && $coupon->tipe_sewa !== 'per_jam') {
-            // only per_jam coupons
+        $result = $service->validasiKupon(
+            $request->code,
+            $request->user(),
+            $request->tipe_sewa ?? 'per_jam',
+            (int) $request->total_harga,
+            false // preview saja; cek bentrok kuota member dilakukan saat store
+        );
+        if ($result['error']) {
+            return response()->json(['valid' => false, 'message' => $result['error']]);
         }
-        if ($request->tipe_sewa === 'harian') return response()->json(['valid'=>false,'message'=>'Kupon hanya untuk per_jam']);
-        if (auth()->check() && !$coupon->canBeUsedBy(auth()->id())) {
-            return response()->json(['valid'=>false,'message'=>'Kupon sudah dipakai maksimal '.$coupon->per_user_limit.'x']);
-        }
-        // Cek kuota member gratis
-        if (auth()->check() && auth()->user()->member_package_id) {
-            $paket = \App\Models\PaketMember::find(auth()->user()->member_package_id);
-            if ($paket && auth()->user()->member_expired_at && \Carbon\Carbon::parse(auth()->user()->member_expired_at)->isFuture()) {
-                // Jika masih ada sisa kuota, informasikan tidak bisa stack
-                // Tidak block di preview, hanya info
-            }
-        }
-        $total = (int) $request->total_harga;
-        if ($total && $coupon->min_amount && $total < $coupon->min_amount) {
-            return response()->json(['valid'=>false,'message'=>'Minimal belanja Rp'.number_format($coupon->min_amount,0,',','.')]);
-        }
-        $discount = $total ? $coupon->calculateDiscount($total) : 0;
+        $coupon = $result['coupon'];
         return response()->json([
             'valid'=>true,
             'message'=>'Kupon valid '.$coupon->value.'%'.($coupon->max_discount ? ' max Rp'.number_format($coupon->max_discount,0,',','.') : ''),
-            'discount'=>$discount,
+            'discount'=>$result['discount'],
             'coupon'=>['code'=>$coupon->code,'value'=>$coupon->value,'max_discount'=>$coupon->max_discount]
         ]);
     }

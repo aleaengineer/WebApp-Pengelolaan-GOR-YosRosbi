@@ -95,6 +95,30 @@
                         </div>
                     </div>
 
+                    <!-- Instruksi pembayaran sesuai metode terpilih -->
+                    <div id="info-transfer" class="hidden border border-primary-200 bg-primary-50 rounded-xl p-4 text-sm">
+                        <div class="font-bold text-primary-800 mb-1">🏦 Instruksi Transfer Bank</div>
+                        <div class="text-gray-700">Silakan transfer ke rekening:
+                            <div class="mt-1 font-mono font-bold text-base text-primary-700 bg-white border border-primary-200 rounded-lg px-3 py-2 inline-block">{{ $rekening }}</div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">Setelah booking dibuat, unggah bukti transfer di halaman detail booking. Konfirmasi cepat: WA {{ $kontakWa ?: '-' }}</div>
+                    </div>
+                    <div id="info-midtrans" class="hidden border border-blue-200 bg-blue-50 rounded-xl p-4 text-sm">
+                        <div class="font-bold text-blue-800 mb-1">📱 QRIS / Midtrans</div>
+                        @if($qris)
+                            <img src="{{ str_starts_with($qris, 'http') ? $qris : asset('storage/'.$qris) }}" alt="QRIS" class="w-40 h-40 object-contain bg-white border border-blue-200 rounded-lg p-1">
+                            <div class="text-xs text-gray-500 mt-1">Scan QRIS di atas dengan aplikasi pembayaran.</div>
+                        @else
+                            <div class="text-gray-700">Pembayaran QRIS via Midtrans — lanjutkan pembayaran setelah booking dibuat (mode simulasi).</div>
+                            <div class="text-xs text-amber-600 mt-1">⚠️ Gambar QRIS belum diatur admin — hubungi WA {{ $kontakWa ?: '-' }} atau gunakan metode lain.</div>
+                        @endif
+                    </div>
+                    <div id="info-cash" class="hidden border border-green-200 bg-green-50 rounded-xl p-4 text-sm">
+                        <div class="font-bold text-green-800 mb-1">💵 Bayar Tunai di Tempat</div>
+                        <div class="text-gray-700">Bayar langsung di meja admin GOR sebelum sesi dimulai. Booking akan diverifikasi admin saat kedatangan.</div>
+                        <div class="text-xs text-gray-500 mt-2">Info lebih lanjut: WA {{ $kontakWa ?: '-' }}</div>
+                    </div>
+
                     <div>
                         <label class="text-sm font-semibold text-gray-700">Catatan (opsional)</label>
                         <textarea name="catatan" rows="2" class="mt-1 block w-full border-gray-300 rounded-lg focus:border-primary-500 focus:ring-primary-500" placeholder="Kebutuhan khusus..."></textarea>
@@ -179,6 +203,15 @@
             updateHargaPreview(0);
             document.getElementById('couponResult').classList.add('hidden');
         }
+        function toggleMetodeInfo(){
+            const v = document.querySelector('input[name="metode"]:checked')?.value;
+            ['transfer','midtrans','cash'].forEach(m=>{
+                const el = document.getElementById('info-'+m);
+                if(el) el.classList.toggle('hidden', m !== v);
+            });
+        }
+        document.querySelectorAll('input[name="metode"]').forEach(r => r.addEventListener('change', toggleMetodeInfo));
+        toggleMetodeInfo();
         document.getElementById('coupon_code')?.addEventListener('change', checkCoupon);
         document.getElementById('tanggal')?.addEventListener('change', checkAvail);
         document.getElementById('jam_mulai')?.addEventListener('change', checkAvail);

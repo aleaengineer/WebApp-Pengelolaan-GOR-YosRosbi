@@ -6,6 +6,11 @@ window.Alpine = Alpine;
 
 Alpine.start();
 
+// Grafik laporan admin: chunk chart.js hanya dimuat jika halaman punya #laporanChart
+if (document.getElementById('laporanChart')) {
+    import('./laporan-chart').then(({ initLaporanChart }) => initLaporanChart(document.getElementById('laporanChart')));
+}
+
 // PWA Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

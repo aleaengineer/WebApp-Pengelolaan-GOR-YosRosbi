@@ -14,7 +14,7 @@
                 @forelse($bookings as $b)
                     <div class="border rounded-xl p-4 mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white">
                         <div class="flex-1 min-w-0 text-center sm:text-left">
-                            <div class="font-semibold text-gray-900 text-sm sm:text-base">{{ $b->tanggal->format('d M Y') }} • {{ $b->jam_mulai }}-{{ $b->jam_selesai }} • {{ ucfirst($b->jenis_kegiatan) }}</div>
+                            <div class="font-semibold text-gray-900 text-sm sm:text-base"><span class="font-mono text-primary-700">{{ $b->kode_booking }}</span> • {{ $b->tanggal->format('d M Y') }} • {{ $b->jam_mulai }}-{{ $b->jam_selesai }} • {{ ucfirst($b->jenis_kegiatan) }}</div>
                             <div class="text-xs text-gray-600 mt-1">{{ $b->tipe_sewa }} • {{ $b->status }} • Rp {{ number_format($b->total_harga,0,',','.') }} • {{ $b->payment->metode ?? '-' }}</div>
                             <div class="text-xs text-primary-600 mt-1">Jeda hingga {{ \Carbon\Carbon::parse($b->jam_selesai)->addMinutes(30)->format('H:i') }} (tidak ditagih)</div>
                         </div>

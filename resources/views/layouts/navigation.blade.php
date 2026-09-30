@@ -3,9 +3,8 @@
         <div class="flex justify-between h-16">
             <div class="flex items-center">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('home') }}" class="flex items-center gap-2">
-                        <div class="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">YR</div>
-                        <span class="font-bold text-gray-900 text-lg tracking-tight">GOR <span class="text-primary-600">YOS ROSBI</span></span>
+                    <a href="{{ route('home') }}" class="flex items-center">
+                        <img src="{{ asset('images/logo-gor.png') }}" alt="GOR Yos Rosbi — Booking Sarana Olahraga & Acara" class="h-11 w-auto">
                     </a>
                 </div>
                 <div class="hidden space-x-1 sm:-my-px sm:ms-8 sm:flex items-center">

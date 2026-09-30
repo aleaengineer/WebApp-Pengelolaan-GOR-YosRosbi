@@ -9,13 +9,18 @@ use App\Models\HargaSewa;
 use App\Models\PaketMember;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminBookingController extends Controller
 {
     public function index(Request $request)
     {
         $query = Booking::with(['user','lapangan','payment'])->latest();
-        if ($request->status) $query->where('status', $request->status);
+        $statusList = array_merge(Booking::STATUS_ACTIVE, ['cancelled','expired']);
+        if ($request->status && in_array($request->status, $statusList)) {
+            $query->where('status', $request->status);
+        }
         if ($request->tanggal) $query->whereDate('tanggal', $request->tanggal);
         $bookings = $query->paginate(15);
         return view('admin.bookings.index', compact('bookings'));
@@ -30,13 +35,19 @@ class AdminBookingController extends Controller
     public function updateStatus(Request $request, Booking $booking)
     {
         $request->validate(['status' => 'required|in:paid,confirmed,completed,cancelled']);
-        $booking->update(['status' => $request->status]);
-        if ($request->status === 'paid' || $request->status === 'confirmed') {
-            $booking->payment()->update(['status' => 'paid', 'paid_at' => now()]);
+        $allowed = Booking::STATUS_TRANSITIONS[$booking->status] ?? [];
+        if (!in_array($request->status, $allowed)) {
+            return back()->withErrors(['error' => 'Transisi status dari '.$booking->status.' ke '.$request->status.' tidak valid']);
         }
-        if ($request->status === 'cancelled') {
-            $booking->payment()->update(['status' => 'failed']);
-        }
+        DB::transaction(function () use ($request, $booking) {
+            if ($request->status === 'cancelled') {
+                $booking->restoreCouponUsage();
+                $booking->payment()->update(['status' => 'failed']);
+            } else {
+                $booking->payment()->update(['status' => 'paid', 'paid_at' => now()]);
+            }
+            $booking->update(['status' => $request->status]);
+        });
         return back()->with('success','Status booking diupdate ke '.$request->status);
     }
 
@@ -98,7 +109,28 @@ class AdminBookingController extends Controller
                 if ($paket) $paket->update(['harga' => (int) $value]);
             }
         }
+
+        // Upload / hapus gambar QRIS
+        if ($request->hasFile('qris_image')) {
+            $request->validate(['qris_image' => 'mimes:jpg,jpeg,png,webp|max:2048']);
+            $this->deleteQrisFile();
+            $path = $request->file('qris_image')->store('qris', 'public');
+            Setting::set('qris', $path);
+        }
+        if ($request->boolean('hapus_qris')) {
+            $this->deleteQrisFile();
+            Setting::set('qris', null);
+        }
+
         return back()->with('success','Pengaturan disimpan');
+    }
+
+    private function deleteQrisFile(): void
+    {
+        $old = Setting::get('qris');
+        if ($old && !str_starts_with($old, 'http')) {
+            Storage::disk('public')->delete($old);
+        }
     }
 
     public function laporan(Request $request)
@@ -110,6 +142,18 @@ class AdminBookingController extends Controller
         $bookings = $query->get();
         $total = $bookings->sum('total_harga');
         $totalJam = $bookings->sum('durasi_jam');
-        return view('admin.laporan', compact('bookings','total','totalJam'));
+
+        // Data grafik: pendapatan & jam per tanggal
+        $perTanggal = $bookings
+            ->groupBy(fn ($b) => $b->tanggal->format('Y-m-d'))
+            ->sortKeys()
+            ->map(fn ($rows, $tgl) => [
+                'tanggal' => $tgl,
+                'pendapatan' => (int) $rows->sum('total_harga'),
+                'jam' => (int) $rows->sum('durasi_jam'),
+            ])
+            ->values();
+
+        return view('admin.laporan', compact('bookings','total','totalJam','perTanggal'));
     }
 }

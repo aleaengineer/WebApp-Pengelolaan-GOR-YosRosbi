@@ -11,12 +11,16 @@ class Setting extends Model
 
     public static function get($key, $default = null)
     {
-        $setting = static::where('key', $key)->first();
-        return $setting ? $setting->value : $default;
+        $value = Cache::rememberForever("setting:{$key}", function () use ($key) {
+            return static::where('key', $key)->value('value');
+        });
+
+        return $value ?? $default;
     }
 
     public static function set($key, $value)
     {
+        Cache::forget("setting:{$key}");
         return static::updateOrCreate(['key' => $key], ['value' => $value]);
     }
 }

@@ -24,7 +24,7 @@
 - Booking per jam / harian dengan cek ketersediaan & jeda 30 menit otomatis
 - 3 metode pembayaran: transfer (unggah bukti), Midtrans (simulasi), cash
 - Kuota member gratis (jika paket aktif)
-- Kupon percent (hanya per jam, max 1x/user)
+- Kupon percent (hanya per jam, max 1x/user, dikembalikan otomatis saat booking dibatalkan)
 - Dashboard: statistik booking, paket member, riwayat, promo
 - PWA installable
 
@@ -33,8 +33,12 @@
 - Kelola blokir jadwal manual
 - Kelola paket member (harga, kuota, durasi)
 - Kelola kupon (buat, edit, aktif/nonaktifkan)
-- Laporan booking per tanggal & jenis kegiatan
+- Laporan booking per tanggal & jenis kegiatan dengan grafik pendapatan/jam (Chart.js)
 - Pengaturan umum (jam operasional, buffer, harga sewa, rekening, kontak)
+
+### Perawatan Otomatis
+- `php artisan booking:expire-stale` — menandai booking `pending`/`pending_verification` yang sudah terlewat jadwalnya sebagai `expired`, mengembalikan kupon, dan membebaskan kuota member. Booking yang sudah dibayar tidak disentuh.
+- Dijadwalkan otomatis setiap hari pukul 01:00 (lihat `routes/console.php`); di lokal jalankan `php artisan schedule:run` via cron/Task Scheduler.
 
 ---
 
@@ -44,7 +48,7 @@
 |-------|-----------|
 | Framework | Laravel 12.69 |
 | Auth | Laravel Breeze (Blade) |
-| Frontend | Blade + Tailwind CSS 3 |
+| Frontend | Blade + Tailwind CSS 3 + Chart.js (lazy-load) |
 | Fonts | Poppins, Inter |
 | PWA | vite-plugin-pwa (Cache-First/Network-First) |
 | Database | MySQL/MariaDB (produksi) / SQLite (dev) |
@@ -82,6 +86,8 @@ DB_CONNECTION=mysql
 DB_DATABASE=goryosrosbi
 DB_USERNAME=root
 DB_PASSWORD=
+
+# Timezone default sudah diatur Asia/Jakarta (APP_TIMEZONE di .env)
 
 # 6. Generate app key
 php artisan key:generate
@@ -125,6 +131,11 @@ CREATE DATABASE goryosrosbi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - Metode: transfer / midtrans / cash
 - Kode kupon (opsional)
 
+**Aturan validasi:**
+- Jam booking harus di dalam jam operasional (selesai 00:00 dihitung 24:00)
+- Tidak bisa booking jam yang sudah lewat untuk hari ini
+- Durasi harian mengikuti panjang jam operasional dari pengaturan
+
 **Proses submit:**
 ```
 [1] Validasi input
@@ -134,6 +145,7 @@ CREATE DATABASE goryosrosbi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 [5] Validasi kupon (percent, per_jam, tidak stack dengan gratis member, 1x/user)
 [6] Hitung diskon kupon
 [7] Simpan booking + payment dalam DB transaction
+    (re-check ketersediaan dengan lockForUpdate — anti double-booking)
 [8] Redirect ke halaman detail booking
 ```
 

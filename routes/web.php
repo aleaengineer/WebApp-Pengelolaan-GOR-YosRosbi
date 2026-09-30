@@ -9,14 +9,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/jadwal', [HomeController::class, 'jadwal'])->name('jadwal');
-Route::get('/api/check-availability', [HomeController::class, 'checkAvailability'])->name('api.check');
-Route::get('/api/check-coupon', [HomeController::class, 'checkCoupon'])->name('api.coupon');
-Route::get('/api/availability', function(\Illuminate\Http\Request $request, \App\Services\BookingService $service){
-    $tanggal = $request->get('tanggal', date('Y-m-d'));
-    $fixed = $service->generateFixedSlots($tanggal);
-    $bookings = \App\Models\Booking::whereDate('tanggal', $tanggal)->whereIn('status', \App\Models\Booking::STATUS_ACTIVE)->get(['jam_mulai','jam_selesai','jenis_kegiatan','status']);
-    $blokirs = \App\Models\BlokirJadwal::whereDate('tanggal', $tanggal)->get(['jam_mulai','jam_selesai','alasan']);
-    return response()->json(['tanggal'=>$tanggal,'fixedSlots'=>$fixed,'bookings'=>$bookings,'blokirs'=>$blokirs]);
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/api/check-availability', [HomeController::class, 'checkAvailability'])->name('api.check');
+    Route::get('/api/check-coupon', [HomeController::class, 'checkCoupon'])->name('api.coupon');
+    Route::get('/api/availability', function(\Illuminate\Http\Request $request, \App\Services\BookingService $service){
+        $tanggal = $request->get('tanggal', date('Y-m-d'));
+        $fixed = $service->generateFixedSlots($tanggal);
+        $bookings = \App\Models\Booking::whereDate('tanggal', $tanggal)->whereIn('status', \App\Models\Booking::STATUS_ACTIVE)->get(['jam_mulai','jam_selesai','jenis_kegiatan','status']);
+        $blokirs = \App\Models\BlokirJadwal::whereDate('tanggal', $tanggal)->get(['jam_mulai','jam_selesai','alasan']);
+        return response()->json(['tanggal'=>$tanggal,'fixedSlots'=>$fixed,'bookings'=>$bookings,'blokirs'=>$blokirs]);
+    });
 });
 
 Route::get('/dashboard', function () {
@@ -33,7 +35,7 @@ Route::get('/dashboard', function () {
     $totalBooking = \App\Models\Booking::where('user_id',$user->id)->count();
     $totalJam = \App\Models\Booking::where('user_id',$user->id)->whereIn('status',['paid','confirmed','completed'])->sum('durasi_jam');
     $totalPengeluaran = \App\Models\Booking::where('user_id',$user->id)->whereIn('status',['paid','confirmed','completed'])->sum('total_harga');
-    $totalDiskon = \App\Models\Booking::where('user_id',$user->id)->sum('discount_amount');
+    $totalDiskon = \App\Models\Booking::where('user_id',$user->id)->whereIn('status',['paid','confirmed','completed'])->sum('discount_amount');
     $upcoming = \App\Models\Booking::where('user_id',$user->id)->whereIn('status',['pending','pending_verification','paid','confirmed'])->whereDate('tanggal','>=',date('Y-m-d'))->orderBy('tanggal')->orderBy('jam_mulai')->first();
     $recent = \App\Models\Booking::where('user_id',$user->id)->latest()->take(3)->get();
     $promos = \App\Models\Coupon::where('is_active',true)->where(function($q){$q->whereNull('expired_at')->orWhere('expired_at','>',now());})->where('tipe_sewa','per_jam')->latest()->take(2)->get();
@@ -48,7 +50,7 @@ Route::middleware('auth')->group(function () {
     // Customer Booking
     Route::get('/booking', [BookingController::class, 'index'])->name('booking.index');
     Route::get('/booking/create', [BookingController::class, 'create'])->name('booking.create');
-    Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+    Route::post('/booking', [BookingController::class, 'store'])->middleware('throttle:10,1')->name('booking.store');
     Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('booking.show');
     Route::post('/booking/{booking}/upload', [BookingController::class, 'uploadBukti'])->name('booking.upload');
     Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header"><h2 class="font-bold text-xl text-white" style="font-family:Poppins">Detail Booking #{{ $booking->id }}</h2></x-slot>
+    <x-slot name="header"><h2 class="font-bold text-xl text-white" style="font-family:Poppins">Detail Booking {{ $booking->kode_booking ?? '#'.$booking->id }}</h2></x-slot>
     <div class="py-6 sm:py-8 bg-gray-50 min-h-screen">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <button onclick="if(history.length>1){history.back()}else{window.location.href='{{ route('booking.index') }}'}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 px-4 py-2.5 rounded-full shadow-sm hover:bg-gray-50 hover:text-primary-600 transition">
@@ -19,6 +19,9 @@
                     ">{{ strtoupper($booking->status) }}</span>
                 </div>
                 <div class="mt-4 space-y-2 text-sm">
+                    <div><strong>No. Order:</strong> <span class="font-mono font-bold text-primary-700">{{ $booking->kode_booking ?? ('GR-'.$booking->tanggal->format('Ymd').'-'.str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT)) }}</span>
+                        <button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent='✓ Tersalin'" class="ml-1 text-xs text-gray-400 underline">copy</button>
+                    </div>
                     <div><strong>Tanggal:</strong> {{ $booking->tanggal->format('d M Y') }} @if($booking->tanggal_selesai) - {{ $booking->tanggal_selesai->format('d M Y') }} @endif</div>
                     <div><strong>Jam:</strong> {{ $booking->jam_mulai }} - {{ $booking->jam_selesai }} ({{ $booking->durasi_jam }} jam)</div>
                     <div><strong>Jeda Pembersihan:</strong> {{ \Carbon\Carbon::parse($booking->jam_selesai)->addMinutes(30)->format('H:i') }} (30 menit, tidak ditagih, tidak berlaku jika dibatalkan)</div>
@@ -28,15 +31,46 @@
                     @if($booking->catatan)<div><strong>Catatan:</strong> {{ $booking->catatan }}</div>@endif
                 </div>
 
+                @if($booking->total_harga === 0)
+                    <div class="mt-5 border border-green-200 bg-green-50 rounded-xl p-4 text-sm">
+                        <div class="font-bold text-green-800">✓ Booking Gratis Member</div>
+                        <div class="mt-1 text-gray-700">Booking ini memakai kuota member — tidak ada pembayaran. Menunggu verifikasi admin.</div>
+                    </div>
+                @elseif(in_array($booking->status, ['pending','pending_verification']))
+                    @php $metodeBayar = $booking->payment->metode ?? null; @endphp
+                    @if($metodeBayar === 'transfer')
+                        <div class="mt-5 border border-primary-200 bg-primary-50 rounded-xl p-4 text-sm">
+                            <div class="font-bold text-primary-800">🏦 Instruksi Pembayaran — Transfer Bank</div>
+                            <div class="mt-1 text-gray-700">Transfer ke: <span class="font-mono font-bold text-primary-700 bg-white border border-primary-200 rounded-lg px-2 py-0.5 inline-block">{{ $rekening }}</span> sebesar <strong>Rp{{ number_format($booking->total_harga,0,',','.') }}</strong></div>
+                            <div class="text-xs text-gray-500 mt-2">Setelah transfer, unggah bukti pembayaran (form di atas) lalu konfirmasi via WA {{ $kontakWa ?: '-' }} untuk verifikasi cepat.</div>
+                        </div>
+                    @elseif($metodeBayar === 'midtrans')
+                        <div class="mt-5 border border-blue-200 bg-blue-50 rounded-xl p-4 text-sm">
+                            <div class="font-bold text-blue-800">📱 Pembayaran QRIS / Midtrans</div>
+                            @if($qris)
+                                <img src="{{ str_starts_with($qris, 'http') ? $qris : asset('storage/'.$qris) }}" alt="QRIS" class="w-40 h-40 object-contain bg-white border border-blue-200 rounded-lg p-1 mt-2">
+                            @else
+                                <div class="text-xs text-amber-600 mt-2">⚠️ Gambar QRIS belum diatur admin.</div>
+                            @endif
+                            <div class="mt-1 text-gray-700">Selesaikan pembayaran sebesar <strong>Rp{{ number_format($booking->total_harga,0,',','.') }}</strong> (mode simulasi). Konfirmasi via WA {{ $kontakWa ?: '-' }}.</div>
+                        </div>
+                    @elseif($metodeBayar === 'cash')
+                        <div class="mt-5 border border-green-200 bg-green-50 rounded-xl p-4 text-sm">
+                            <div class="font-bold text-green-800">💵 Pembayaran Tunai</div>
+                            <div class="mt-1 text-gray-700">Bayar <strong>Rp{{ number_format($booking->total_harga,0,',','.') }}</strong> langsung di meja admin GOR sebelum sesi dimulai.</div>
+                        </div>
+                    @endif
+                @endif
+
                 <div class="mt-6 flex flex-wrap gap-2">
-                    @if(in_array($booking->status,['pending','pending_verification']) && $booking->payment->metode=='transfer')
+                    @if(in_array($booking->status,['pending','pending_verification']) && $booking->payment?->metode=='transfer')
                         <form method="POST" action="{{ route('booking.upload',$booking->id) }}" enctype="multipart/form-data" class="flex gap-2 items-center">
                             @csrf
                             <input type="file" name="bukti" accept="image/*" required class="text-sm">
                             <button class="bg-primary-600 text-white px-4 py-2 rounded-full text-sm font-semibold">Upload Bukti</button>
                         </form>
                     @endif
-                    @if($booking->payment->bukti_transfer_path)
+                    @if($booking->payment?->bukti_transfer_path)
                         <a href="{{ asset('storage/'.$booking->payment->bukti_transfer_path) }}" target="_blank" class="text-primary-600 text-sm underline">Lihat Bukti</a>
                     @endif
                     @if(in_array($booking->status,['pending','pending_verification','paid']))
@@ -48,7 +82,7 @@
                 </div>
 
                 <div class="mt-6 p-4 bg-gray-50 rounded-xl text-xs text-gray-600">
-                    Invoice #{{ $booking->id }} • Dibuat {{ $booking->created_at->format('d M Y H:i') }} • Jika butuh bantuan hubungi WA admin.
+                    Invoice {{ $booking->kode_booking ?? ('#'.$booking->id) }} • Dibuat {{ $booking->created_at->format('d M Y H:i') }} • Jika butuh bantuan hubungi WA admin.
                 </div>
             </div>
         </div>

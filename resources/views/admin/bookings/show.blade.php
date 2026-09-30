@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header"><h2 class="font-bold text-xl text-white" style="font-family:Poppins">Detail Booking #{{ $booking->id }}</h2></x-slot>
+    <x-slot name="header"><h2 class="font-bold text-xl text-white" style="font-family:Poppins">Booking {{ $booking->kode_booking ?? ('#'.$booking->id) }}</h2></x-slot>
     <div class="py-6 bg-gray-50 min-h-screen">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             @if(session('success'))<div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-xl mb-4">{{ session('success') }}</div>@endif
