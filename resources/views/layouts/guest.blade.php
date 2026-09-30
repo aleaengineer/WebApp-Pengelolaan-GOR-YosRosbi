@@ -24,9 +24,10 @@
 
                 <div class="relative">
                     <a href="/" class="inline-flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary-600 font-bold text-lg shadow-lg">YR</div>
-                        <span class="font-bold text-xl tracking-tight" style="font-family:Poppins">GOR <span class="text-white">YOS ROSBI</span></span>
-                        <span class="ml-2 text-[10px] tracking-[0.2em] bg-white/20 px-2 py-1 rounded-full font-semibold">OFFICIAL</span>
+                        <div class="bg-white rounded-xl px-3.5 py-2.5 shadow-lg">
+                            <img src="{{ asset('images/logo-gor.png') }}" alt="GOR Yos Rosbi — Booking Sarana Olahraga & Acara" class="h-9 w-auto">
+                        </div>
+                        <span class="text-[10px] tracking-[0.2em] bg-white/20 px-2 py-1 rounded-full font-semibold">OFFICIAL</span>
                     </a>
                 </div>
 
@@ -53,16 +54,47 @@
                         </div>
                     </div>
 
-                    <div class="mt-6 bg-white rounded-2xl p-4 shadow-xl max-w-md">
-                        <div class="flex items-center gap-3">
-                            <img src="https://i.pravatar.cc/100?img=15" class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="text-sm font-bold text-gray-900">Budi, Member Bulanan</div>
-                                <div class="text-xs text-gray-500">Badminton • 3x seminggu</div>
-                            </div>
-                            <span class="ml-auto text-yellow-400">★★★★★</span>
+                    <div class="mt-6 bg-white rounded-2xl p-4 shadow-xl max-w-md"
+                         x-data="{
+                            slide: 0,
+                            testimonials: [
+                                { name: 'Budi Santoso', info: 'Member Bulanan • Badminton 3x seminggu', img: 15,
+                                  quote: 'Bookingnya gampang, jeda 30 menit bikin lapangan selalu bersih. Member hemat banget!' },
+                                { name: 'Sari Wulandari', info: 'Member Hemat 10x • Voly', img: 47,
+                                  quote: 'Pakai kuota member jadi jauh lebih murah. Verifikasi transfernya juga cepat, kurang dari sejam langsung dikonfirmasi admin.' },
+                                { name: 'Andi Pratama', info: 'Customer • Basket', img: 12,
+                                  quote: 'Bayar pakai QRIS gampang, buka aplikasi tinggal pilih jam kosong. Tidak perlu telepon-telepon lagi.' },
+                                { name: 'Rina Kusuma', info: 'Event Organizer • Event Indoor', img: 32,
+                                  quote: 'Sewa harian untuk event komunitas lancar, adminnya responsif di WA. Tempatnya selalu siap dan bersih.' },
+                                { name: 'Dedi Rahman', info: 'Member Mingguan • Badminton', img: 59,
+                                  quote: 'Dari HP bisa lihat jam kosong real-time, kalau slot bentrok langsung dikasih saran jam lain. Mantap.' },
+                            ],
+                            init() { setInterval(() => this.next(), 5000) },
+                            next() { this.slide = (this.slide + 1) % this.testimonials.length },
+                         }">
+                        <div class="relative" style="min-height:124px">
+                            <template x-for="(t, i) in testimonials" :key="i">
+                                <div class="absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                     :class="slide === i ? 'opacity-100 translate-x-0 z-10' : 'opacity-0 translate-x-6 pointer-events-none'">
+                                    <div class="flex items-center gap-3">
+                                        <img :src="'https://i.pravatar.cc/100?img=' + t.img" class="w-10 h-10 rounded-full" :alt="t.name">
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-bold text-gray-900" x-text="t.name"></div>
+                                            <div class="text-xs text-gray-500 truncate" x-text="t.info"></div>
+                                        </div>
+                                        <span class="ml-auto text-yellow-400 shrink-0">★★★★★</span>
+                                    </div>
+                                    <p class="mt-3 text-sm text-gray-600 italic" x-text="'\u201C' + t.quote + '\u201D'"></p>
+                                </div>
+                            </template>
                         </div>
-                        <p class="mt-3 text-sm text-gray-600 italic">“Bookingnya gampang, jeda 30 menit bikin lapangan selalu bersih. Member hemat banget!”</p>
+                        <div class="flex gap-1.5 mt-3 justify-center">
+                            <template x-for="(t, i) in testimonials" :key="'dot-' + i">
+                                <button type="button" @click="slide = i" aria-label="Testimoni"
+                                        :class="slide === i ? 'bg-primary-600 w-5' : 'bg-gray-300 hover:bg-gray-400 w-2'"
+                                        class="h-2 rounded-full transition-all duration-300"></button>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
@@ -77,9 +109,8 @@
             <div class="flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-16 bg-white relative py-6 sm:py-8">
                 <!-- Mobile header - simetris -->
                 <div class="lg:hidden flex items-center justify-between gap-4 py-5 border-b border-gray-100 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-                    <a href="/" class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold shrink-0">YR</div>
-                        <span class="font-bold text-gray-900 text-[15px] tracking-tight truncate">GOR <span class="text-primary-600">YOS ROSBI</span></span>
+                    <a href="/" class="flex items-center min-w-0">
+                        <img src="{{ asset('images/logo-gor.png') }}" alt="GOR Yos Rosbi — Booking Sarana Olahraga & Acara" class="h-9 w-auto">
                     </a>
                     <a href="/" class="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-primary-600 bg-primary-50 px-3.5 py-2 rounded-full hover:bg-primary-100 transition">← Beranda</a>
                 </div>
